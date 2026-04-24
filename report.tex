@@ -1,0 +1,526 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{multirow}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstset{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single
+}
+
+\geometry{
+    a4paper,
+    total={170mm,257mm},
+    left=25mm,
+    right=25mm,
+    top=25mm,
+}
+
+\begin{document}
+
+\begin{center}
+    \vspace*{1cm}
+    {\large \textbf{REPORT ON THE KNAPSACK PROBLEM}} \\
+    \vspace{0.8cm}
+    
+    \textbf{Mustapha Muntassir} \\
+    Filière : ASEDS \\
+    Institut National des Postes et Télécommunications (INPT) \\
+    \vspace{0.2cm}
+    Date: 04-18-2026
+\end{center}
+
+\vspace{0.8cm}
+
+\noindent \textbf{ABSTRACT}
+\vspace{0.2cm}
+
+\noindent In this report, the 0-1 Knapsack problem is analyzed. We present the description and mathematical formulation of the problem. First, the mathematical formulation is solved exactly using the IBM CPLEX solver. Then, the performance of five different greedy heuristics for the solution of this problem is evaluated. Finally, the results are compared with the performance of local search algorithms based on the one-flip neighborhood (using both first improvement and best improvement strategies).
+\vspace{0.8cm}
+
+\section{Description of the Knapsack Problem}
+
+The 0-1 Knapsack Problem is a fundamental problem in combinatorial optimization that represents a scenario of constrained resource allocation. The problem involves a set of $n$ items, where each item $i$ is characterized by a utility ($u_i$) and a weight ($w_i$). The objective is to select a subset of these items to maximize the total utility without exceeding a predefined capacity $W$.
+
+The ``0-1'' designation refers to the constraint that each item is indivisible; it must either be included in the knapsack in its entirety or left behind. While simple to describe, the problem is weakly NP-hard, meaning there is no known polynomial-time algorithm to solve all instances exactly unless $P=NP$. However, it is considered ``fully approximable,'' allowing for efficient approximate solutions.
+
+\subsection*{Real-World Applications}
+The Knapsack Problem serves as a model for many practical decision-making processes, including:
+\begin{itemize}
+    \item \textbf{Financial Portfolio Selection:} Choosing a combination of investment projects to maximize returns given a fixed budget.
+    \item \textbf{Resource Allocation:} Distributing limited computing power or personnel across various tasks to maximize productivity.
+    \item \textbf{Cargo Loading:} Filling a container or vehicle with packages of different weights and values to maximize the worth of the shipment.
+    \item \textbf{Cutting Stock Problems:} Determining how to cut raw materials (like fabric or steel) into specific sizes to minimize waste.
+\end{itemize}
+
+\section{Mathematical Formulation}
+
+Following the notation provided by Ausiello, Marchetti, and Protasi \cite{AusielloProtasi}, the 0-1 Knapsack Problem is formulated as an Integer Linear Programming (ILP) model.
+
+\subsection*{Parameters}
+\begin{itemize}
+    \item $n$: The total number of items available for selection.
+    \item $u_i$: The utility associated with item $i$, where $u_i > 0$.
+    \item $w_i$: The weight of item $i$, where $w_i > 0$.
+    \item $W$: The total capacity of the knapsack.
+\end{itemize}
+
+\subsection*{Decision Variables}
+We define a binary decision variable for each item $i$:
+\begin{equation*}
+    x_i \in \{0, 1\} \quad \text{for } i = 1, \dots, n
+\end{equation*}
+Where:
+\begin{itemize}
+    \item $x_i = 1$ if item $i$ is selected for the knapsack.
+    \item $x_i = 0$ if item $i$ is not selected.
+\end{itemize}
+
+\subsection*{Objective Function}
+The goal is to find the optimal value $z^*$ that maximizes the sum of the utilities of the selected items:
+\begin{equation*}
+    \max Z = \sum_{i=1}^{n} u_i x_i
+\end{equation*}
+
+\subsection*{Constraints}
+The total weight of the selected items must not exceed the knapsack capacity $W$:
+\begin{equation*}
+    \sum_{i=1}^{n} w_i x_i \le W
+\end{equation*}
+
+In probabilistic analysis, the coefficients $w_i$ and $u_i$ are often assumed to be uniformly distributed over an interval $\{1, 2, \dots, c\}$, and the capacity $W$ is treated as a parameter within a meaningful range to ensure the problem remains non-trivial.
+
+% Add further sections here (IBM CPLEX, Greedy Heuristics, One-flip Neighborhood, etc.) over the coming days.
+
+\section{Exact Solution using IBM CPLEX}
+
+To establish a baseline for our approximate methods, the 0-1 Knapsack Problem instances were solved exactly using the IBM CPLEX Optimizer. The mathematical model described in the previous section was implemented using the Optimization Programming Language (OPL).
+
+\subsection*{Implementation Details}
+The model was formulated as follows:
+\begin{enumerate}
+    \item \textbf{Data Initialization:} We defined the size of the problem $n = 20$, the knapsack capacity $W = 35$, along with the arrays for utilities $u$ and weights $w$.
+    \item \textbf{Decision Variables:} A boolean decision variable array $x[1..n]$ was defined to indicate the selection of items.
+    \item \textbf{Objective and Constraints:} We implemented the objective to maximize the total utility \(\sum_{i=1}^{n} u_i \cdot x_i\) subject to the total weight constraint \(\sum_{i=1}^{n} w_i \cdot x_i \le W\).
+\end{enumerate}
+
+\subsection*{Results for the Test Instance}
+A specific test instance was modeled to benchmark our algorithms. The parameters used are:
+\begin{itemize}
+    \item $n = 20$
+    \item $W = 35$
+    \item $u = [4, 2, 1, 2, 10, 2, 2, 1, 3, 2, 5, 3, 2, 8, 5, 2, 6, 12, 14, 6]$
+    \item $w = [12, 2, 1, 1, 4, 1, 2, 1, 2, 1, 3, 2, 1, 5, 3, 2, 4, 6, 7, 3]$
+\end{itemize}
+
+Upon executing the model in CPLEX, the optimal objective value obtained was $Z = 68$. The corresponding decision variables, indicating which items were selected, are given by:
+\begin{equation*}
+    x = [0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1]
+\end{equation*}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{test.png}
+    \caption{CPLEX model implementation and exact solution for the test instance.}
+    \label{fig:cplex_solution}
+\end{figure}
+
+This indicates that the items selected for the exact optimal solution are those at indices 4, 5, 6, 10, 11, 13, 14, 15, 18, 19, and 20. The sum of the utilities for these items is exactly $68$, and the sum of their weights is exactly $35$, thereby fully utilizing the knapsack capacity without exceeding it.
+
+The computation time for this problem instance was recorded as exactly 00:00:00:34. 
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{exe.png}
+    \caption{CPLEX execution time recorded for the model solve.}
+    \label{fig:cplex_time}
+\end{figure}
+
+This minimal execution time demonstrates how CPLEX instantaneously resolves such small-scale integer linear programming instances. This optimal value of $68$ will serve as the exact benchmark for evaluating the accuracy and performance of the greedy heuristics and the local search algorithms in the subsequent methods.
+% the greedy elemets
+% the first greedy algo 
+\section{Implementation and Comparison of Greedy Heuristics}
+
+Since the Knapsack problem is weakly NP-hard, approximate methods are often required for large-scale instances. Greedy heuristics provide a constructive approach by making locally optimal choices at each step. In this section, we evaluate five different greedy strategies.
+
+\subsection{Greedy Heuristic 1: Maximum Utility First}
+The first heuristic, ``Max Utility First,'' sorts all available items in descending order based solely on their utility ($u_i$). The algorithm iterates through this sorted list and selects an item if its inclusion does not exceed the remaining knapsack capacity.
+
+\subsubsection*{Python Implementation}
+The following Python code implements this heuristic, outputting the final profit, the utilities of the chosen items, and the total weight used.
+
+\begin{lstlisting}[language=Python, caption=Max Utility First Heuristic]
+n = 20
+W = 35
+u = [4, 2, 1, 2, 10, 2, 2, 1, 3, 2, 5, 3, 2, 8, 5, 2, 6, 12, 14, 6]
+w = [12, 2, 1, 1, 4, 1, 2, 1, 2, 1, 3, 2, 1, 5, 3, 2, 4, 6, 7, 3]
+
+def max_Value_First(W, w, u):
+    items = sorted(zip(u, w), key=lambda x: x[0], reverse=True)
+    s_u, s_w = zip(*items)
+    
+    c = 0 # Current Weight
+    p = 0 # Total Profit
+    l = [] # List of chosen utilities
+    
+    for i in range(len(s_u)):
+        if c + s_w[i] <= W:
+            c += s_w[i]
+            p += s_u[i]
+            l = l + [s_u[i]]
+            
+    print(p)
+    print("choosen items : ", l)
+    print("the weight : ", c)
+
+max_Value_First(W, w, u)
+\end{lstlisting}
+
+\subsubsection*{Results and Analysis}
+When applied to our test instance ($W=35, n=20$), the Maximum Utility First heuristic yielded a total profit of \textbf{66}. The items chosen based on their high utility values were [14, 12, 10, 8, 6, 6, 5, 5], resulting in a total weight of \textbf{35}. While this is a high-quality solution, it remains lower than the optimal value of 68 found by CPLEX.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{MaxResults.png}
+    \caption{Execution result for the Maximum Utility First heuristic results.}
+    \label{fig:greedy_result_66}
+\end{figure}
+
+
+% the second greedy algo
+\subsection{Greedy Heuristic 2: Minimum Weight First}
+The second heuristic, ``Minimum Weight First,'' sorts all available items in ascending order based on their weight ($w_i$). The primary objective of this strategy is to fit the largest possible number of items into the knapsack, regardless of their individual utility.
+
+\subsubsection*{Python Implementation}
+The following Python code implements this heuristic by sorting the zipped pairs using the weight (index 1) as the key.
+
+\begin{lstlisting}[language=Python, caption=Minimum Weight First Heuristic]
+n = 20
+W = 35
+u = [4, 2, 1, 2, 10, 2, 2, 1, 3, 2, 5, 3, 2, 8, 5, 2, 6, 12, 14, 6]
+w = [12, 2, 1, 1, 4, 1, 2, 1, 2, 1, 3, 2, 1, 5, 3, 2, 4, 6, 7, 3]
+
+def min_Weight_First(W, w, u):
+    items = sorted(zip(u, w), key=lambda x: x[1])
+    s_u, s_w = zip(*items)
+    
+    c = 0 # Current Weight
+    p = 0 # Total Profit
+    l = [] # List of chosen utilities
+    
+    for i in range(len(s_u)):
+        if c + s_w[i] <= W:
+            c += s_w[i]
+            p += s_u[i]
+            l = l + [s_u[i]]
+            
+    return f"solution : {p}\nchoosen items : {l}\nthe weight : {c}"
+
+result = min_Weight_First(W, w, u)
+print(result)
+\end{lstlisting}
+
+\subsubsection*{Results and Analysis}
+Applying the Minimum Weight First heuristic to the test instance ($W=35, n=20$) resulted in a total profit of \textbf{54}. By prioritizing lightness, the algorithm successfully included 16 different items in the knapsack, reaching a total weight of \textbf{33}. 
+
+While this strategy maximizes the count of items, the resulting profit of 54 is significantly lower than the 66 achieved by the Max Utility heuristic and the optimal 68. This demonstrates that for the knapsack problem, simply fitting more items does not guarantee a high-quality objective value if those items have low individual utility.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{minResult.png}
+    \caption{Execution result for the Minimum Weight First heuristic showing results.}
+    \label{fig:greedy_result_54}
+\end{figure}
+
+% the third greedy algo " Maximum Density First "
+
+\subsection{Greedy Heuristic 3: Maximum Density First}
+The third heuristic, ``Maximum Density First,'' selects items based on their profit-to-weight ratio, defined as $r_i = u_i / w_i$. This approach, often referred to in literature as a ``short-sighted'' quality criterion, aims to maximize the efficiency of the knapsack's capacity.
+
+\subsubsection*{Python Implementation}
+The implementation calculates the density for each item and then sorts the items in descending order of these ratios using the \texttt{reverse=True} parameter.
+
+\begin{lstlisting}[language=Python, caption=Maximum Density First Heuristic]
+n = 20
+W = 35
+u = [4, 2, 1, 2, 10, 2, 2, 1, 3, 2, 5, 3, 2, 8, 5, 2, 6, 12, 14, 6]
+w = [12, 2, 1, 1, 4, 1, 2, 1, 2, 1, 3, 2, 1, 5, 3, 2, 4, 6, 7, 3]
+
+def max_Density(W, w, u):
+    r = []
+    for i in range(len(w)):
+        r = r + [u[i]/w[i]]
+    items = sorted(zip(r, u, w), key=lambda x: x[0], reverse=True)
+    R, s_u, s_w = zip(*items)
+    c = 0 # Current Weight
+    p = 0 # Total Profit
+    l = [] # List of chosen utilities
+    
+    for i in range(len(R)):
+        if c + s_w[i] <= W:
+            c += s_w[i]
+            p += s_u[i]
+            l = l + [s_u[i]]
+            
+    return f"solution : {p}\nchosen items : {l}\nthe weight : {c}"
+result = max_Density(W,w,u)
+print(result)
+\end{lstlisting}
+
+\subsubsection*{Results and Analysis}
+The Maximum Density First heuristic achieved a total profit of \textbf{68} for the test instance ($W=35, n=20$). The items selected were [10, 2, 2, 2, 2, 12, 14, 6, 5, 5, 8], resulting in a total weight of exactly \textbf{35}. 
+
+This result is highly significant as it matches the exact optimal solution obtained by the IBM CPLEX solver. This confirms the theoretical assertion found in the lesson materials that the density ratio is the most effective quality criterion for constructive greedy approaches to the 0-1 Knapsack problem.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{max_Density.png}
+    \caption{Execution result for the Maximum Density First heuristic.}
+    \label{fig:greedy_result_68}
+\end{figure}
+
+% the fourth greedy algo 
+\subsection{Greedy Heuristic 4: Max Profit/Weight Hybrid}
+The fourth heuristic, ``Max Profit/Weight Hybrid,'' utilizes a non-linear quality criterion defined by the ratio $r_i = u_i^2 / w_i$. This strategy is designed to prioritize items with very high utility while still penalizing their weight occupancy, essentially providing a middle ground between pure utility greed and pure density efficiency.
+
+\subsubsection*{Python Implementation}
+The implementation calculates this hybrid ratio for each item and then sorts the collection in descending order based on these values.
+
+\begin{lstlisting}[language=Python, caption=Max Profit/Weight Hybrid Heuristic]
+n = 20
+W = 35
+u = [4, 2, 1, 2, 10, 2, 2, 1, 3, 2, 5, 3, 2, 8, 5, 2, 6, 12, 14, 6]
+w = [12, 2, 1, 1, 4, 1, 2, 1, 2, 1, 3, 2, 1, 5, 3, 2, 4, 6, 7, 3]
+
+
+def H_Density(W, w, u):
+    r = []
+    for i in range(len(w)):
+        r = r + [(u[i]**2)/w[i]]
+        
+    items = sorted(zip(r, u, w), key=lambda x: x[0], reverse=True)
+    R, s_u, s_w = zip(*items)
+    
+    c = 0 # Current Weight
+    p = 0 # Total Profit
+    l = [] # List of chosen utilities
+    
+    for i in range(len(R)):
+        if c + s_w[i] <= W:
+            c += s_w[i]
+            p += s_u[i]
+            l = l + [s_u[i]]
+            
+    return f"solution : {p}\nchosen items : {l}\nthe weight : {c}"
+
+result = H_Density(W, w, u)
+print(result)
+\end{lstlisting}
+
+\subsubsection*{Results and Analysis}
+Applying the hybrid heuristic to the test instance ($W=35, n=20$) resulted in a solution value of \textbf{66}. The algorithm selected a set of items with the following utilities: [14, 10, 12, 8, 6, 6, 5, 5], reaching a total weight of exactly \textbf{35}. 
+
+In this specific case, the hybrid approach performed similarly to the ``Max Utility First'' heuristic, yielding a result that is close to the optimal value of 68 but slightly lower due to the quadratic weighting of the utility. This demonstrates how sensitive greedy heuristics can be to the specific quality criteria used for item selection.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{H_density.png}
+    \caption{Max Profit/Weight Hybrid heuristic's results.}
+    \label{fig:greedy_result_hybrid}
+\end{figure}
+% the last greedy algo 
+\subsection{Greedy Heuristic 5: Destructive Reverse Density}
+The final heuristic evaluated is a ``destructive'' greedy approach. Unlike constructive methods that start with an empty set, this algorithm begins with all $n$ items included in the knapsack. To satisfy the capacity constraint $W$, the algorithm identifies and iteratively removes the least efficient items—those with the lowest profit-to-weight ratio ($u_i/w_i$)—until the total weight is less than or equal to the capacity.
+
+\subsubsection*{Python Implementation}
+The implementation calculates the initial total profit and weight, then utilizes an ascending sort of the item densities to identify the candidates for removal.
+
+\begin{lstlisting}[language=Python, caption=Destructive Reverse Density Heuristic]
+n = 20
+W = 35
+u = [4, 2, 1, 2, 10, 2, 2, 1, 3, 2, 5, 3, 2, 8, 5, 2, 6, 12, 14, 6]
+w = [12, 2, 1, 1, 4, 1, 2, 1, 2, 1, 3, 2, 1, 5, 3, 2, 4, 6, 7, 3]
+
+def reverse_Density_First(W, w, u):
+    r = []
+    for i in range(len(w)):
+        r = r + [u[i]/w[i]]
+    
+    items = sorted(zip(r, u, w), key=lambda x: x[0])
+    R, s_u, s_w = zip(*items)
+    
+    current_weight = sum(w)
+    total_profit = sum(u)
+    in_knapsack = [True] * len(s_u)
+    i = 0
+    while current_weight > W and i < len(s_w):
+        current_weight -= s_w[i]
+        total_profit -= s_u[i]
+        in_knapsack[i] = False
+        i += 1
+    s=[]
+    for i in range (len(s_u)) : 
+        if in_knapsack[i] : 
+            s=s+[s_u[i]]
+    return f"solution : {total_profit}\nchosen items : {s}\nthe weight : {current_weight}"
+print(reverse_Density_First(W, w, u))
+\end{lstlisting}
+
+\subsubsection*{Results and Analysis}
+Applying the Destructive Reverse Density heuristic to the test instance resulted in a total profit of \textbf{68}, achieving a total weight of exactly \textbf{35}. 
+
+It is noteworthy that this destructive approach reached the same optimal benchmark as the constructive Maximum Density heuristic. For this specific instance, the items removed due to their low density were those that would have occupied critical space without providing proportional utility. This result reinforces the robustness of density-based selection criteria for the 0-1 Knapsack problem.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{reverse_Density_First.png}
+    \caption{Reverse Density heuristic's results.}
+    \label{fig:greedy_result_reverse}
+\end{figure}
+%  section 5
+
+
+\section{Local Search: One-Flip Neighborhood Structure}
+
+While greedy heuristics provide rapid solutions, they are prone to becoming trapped in local optima because they never revisit previous decisions. To overcome this, we implement a \textit{Local Search} metaheuristic using the \textbf{1-flip neighborhood} structure. This method starts with an initial solution (in this case, an empty knapsack) and iteratively improves it by toggling the status of a single item $x_i$ between 0 (absent) and 1 (present).
+
+\subsection{Implementation of Improvement Strategies}
+
+
+\subsubsection*{1. First Improvement Strategy}
+The First Improvement algorithm scans the neighborhood and immediately accepts the first flip that increases the total utility while remaining feasible. This strategy is computationally efficient as it often moves to a new solution before evaluating the entire neighborhood.
+
+\begin{lstlisting}[language=Python, caption=First Improvement Local Search]
+def First_Improvement_Search():
+    x = [0] * n 
+    while True:
+        improvement_found = False
+        for i in range(n):
+            x_prime = list(x)
+            x_prime[i] = 1 - x[i] 
+            if get_weight(x_prime) <= W and get_value(x_prime) > get_value(x):
+                x = x_prime
+                improvement_found = True
+                break 
+        if not improvement_found:
+            break
+    return x
+\end{lstlisting}
+
+\subsubsection*{2. Best Improvement Strategy}
+The Best Improvement algorithm performs an exhaustive scan of the entire neighborhood of $n$ possible flips. It identifies the move that yields the highest utility gain and only then updates the solution vector. This ensures that every step taken is the steepest possible ascent toward the local optimum.
+
+\begin{lstlisting}[language=Python, caption=Best Improvement Local Search]
+def Flip_local_search():
+  x = [0]*n
+  iteration = 0
+  improvement = False
+  while not improvement:
+    
+    for i in range(n):
+      x_prime = list(x)
+      x_prime[i] = 1- x[i]
+      if get_weight(x_prime) <= W and get_value(x_prime) > get_value(x):
+        x = x_prime
+        improvement= True
+        iteration += 1
+        
+  return x
+\end{lstlisting}
+
+\subsection{Results and Performance Analysis}
+
+The experimental results highlight the "short-sighted" nature of the First Improvement strategy compared to the exhaustive nature of Best Improvement:
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Strategy} & \textbf{Final Utility} & \textbf{Total Weight} \\
+        \hline
+        First Improvement & 41 & 35 \\
+        Best Improvement & \textbf{66} & 35 \\
+        \hline
+    \end{tabular}
+    \caption{Performance comparison of 1-flip Local Search strategies.}
+\end{table}
+
+The First Improvement reached a utility of only \textbf{41} because it prioritized the first available items in the list, which consumed the capacity before high-value items could be considered. In contrast, the Best Improvement reached a utility of \textbf{66} by prioritizing moves with the highest gains. Both strategies remain limited by the 1-flip neighborhood, as reaching the global optimum of 68 would require a more complex move (like a 2-flip/swap) that the current structure cannot explore.
+
+% ---------------------------------------------
+
+\section{Global Comparison and Performance Synthesis}
+
+This table presents a summary of all algorithms implemented during this study. 
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|l|l|c|c|}
+        \hline
+        \textbf{Methodology} & \textbf{Algorithm} & \textbf{Profit} & \textbf{Gap to Optimal} \\
+        \hline
+        \textbf{Exact Method} & IBM ILOG CPLEX (OPL) & \textbf{68} & \textbf{0.00\%} \\
+        \hline
+        \multirow{5}{*}{\textbf{Greedy Heuristics}} & 1. Max Utility First & 66 & 2.94\% \\
+        & 2. Min Weight First & 54 & 20.58\% \\
+        & 3. Max Density First & \textbf{68} & \textbf{0.00\%} \\
+        & 4. Hybrid ($u^2/w$) & 66 & 2.94\% \\
+        & 5. Destructive Reverse Density & \textbf{68} & \textbf{0.00\%} \\
+        \hline
+        \multirow{2}{*}{\textbf{Local Search}} & 1-Flip (First Improvement) & 41 & 39.70\% \\
+        & 1-Flip (Best Improvement) & 66 & 2.94\% \\
+        \hline
+    \end{tabular}
+    \caption{a comparison between all implemented methods.}
+    \label{tab:global_comparison}
+\end{table}
+
+
+\section{Conclusion}
+
+This study compared exact, greedy, and local search methods for the 0-1 Knapsack Problem. Results confirm that while CPLEX provides the optimal benchmark (68), the \textbf{Maximum Density} heuristic is the most efficient alternative, reaching the same optimum. 
+
+Local search analysis showed that \textbf{Best Improvement} (66) significantly outperforms \textbf{First Improvement} (41) by avoiding early local optima. We conclude that density-based greedy strategies offer the best trade-off between complexity and quality for engineering applications.
+%-------------------------------------------------
+\begin{thebibliography}{9}
+
+\bibitem{AusielloProtasi} 
+G. Ausiello, A. Marchetti, and M. Protasi. 
+\textit{Probabilistic analysis of the solution of the knapsack problem}. 
+System Modeling and Optimization. 
+Lecture Notes in Control and Information Sciences (LNCIS, volume 38), pp. 557--565. Springer, 2005.
+
+\bibitem{MountassirRepo}
+\textit{GitHub Repository :}
+\url{https://github.com/Mount1ssir/-0-1_Knapsack_Problem}
+\\ \textit{Comprehensive repository containing all Python source codes, CPLEX model files, and terminal result screenshots referenced throughout this study.}
+
+\end{thebibliography}
+\enddocument

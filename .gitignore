@@ -1,0 +1,26 @@
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+.DS_Store
+Thumbs.db
+
+.ipynb_checkpoints/
+
+*.log
+output/
+*.split.md
+*.report.tex
+*.test.py
+Mustapha_Mountassir's report.pdf
